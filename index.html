@@ -225,7 +225,100 @@
         <span>Restart prototype</span>
       </button>
     </div>
+
+    <!-- Secret design switcher: reveals on hover near the top-right corner -->
+    <button class="secret-btn right" id="designBtn" aria-label="Design switcher">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M3.5 9.5h17M9 9.5v10" stroke="currentColor" stroke-width="1.6"/>
+      </svg>
+    </button>
+    <div class="secret-menu right" id="designMenu">
+      <button class="secret-menu-item" data-design="a">
+        <span>Design A<span class="secret-sub">Lands on Launchpad</span></span>
+        <svg class="secret-check" width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3.2 3L13 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="secret-menu-item" data-design="b">
+        <span>Design B<span class="secret-sub">Lands on #tractor-channel</span></span>
+        <svg class="secret-check" width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3.2 3L13 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
   </div>
+
+  <script>
+    // ===== Cursor relay =====
+    // mousemove only fires in the document the cursor is over, so once the
+    // user is inside an iframe (the app, its sub-views) the parent's hover
+    // detection goes dark. Each iframe relays cursor coords up; here we
+    // re-emit them as a 'proto-cursor' event in absolute top-window space so
+    // the secret buttons stay reachable from anywhere in the prototype.
+    (function () {
+      function emit(x, y) {
+        window.dispatchEvent(new CustomEvent('proto-cursor', { detail: { x, y } }));
+      }
+      document.addEventListener('mousemove', (e) => emit(e.clientX, e.clientY));
+      window.addEventListener('message', (e) => {
+        if (!e.data || !e.data.__cursor) return;
+        const f = [...document.querySelectorAll('iframe')].find(fr => fr.contentWindow === e.source);
+        if (f) { const r = f.getBoundingClientRect(); emit(e.data.x + r.left, e.data.y + r.top); }
+      });
+    })();
+  </script>
+
+  <script>
+    // ===== Secret design switcher (hover near top-right corner) =====
+    (function () {
+      const DESIGN_KEY = 'launchpad-design';
+      const designBtn = document.getElementById('designBtn');
+      const designMenu = document.getElementById('designMenu');
+      let open = false;
+
+      function currentDesign() {
+        try { return sessionStorage.getItem(DESIGN_KEY) || 'a'; } catch (e) { return 'a'; }
+      }
+      function markSelected() {
+        const d = currentDesign();
+        designMenu.querySelectorAll('.secret-menu-item').forEach(i => {
+          i.classList.toggle('selected', i.dataset.design === d);
+        });
+      }
+      markSelected();
+
+      window.addEventListener('proto-cursor', (e) => {
+        const near = e.detail.x > window.innerWidth - 140 && e.detail.y < 140;
+        if (near || open) designBtn.classList.add('visible');
+        else designBtn.classList.remove('visible');
+      });
+
+      function closeMenu() {
+        open = false;
+        designMenu.classList.remove('visible');
+        designBtn.classList.remove('active');
+      }
+
+      designBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        open = !open;
+        designMenu.classList.toggle('visible', open);
+        designBtn.classList.toggle('active', open);
+      });
+
+      document.addEventListener('click', (e) => {
+        if (open && !designMenu.contains(e.target) && !designBtn.contains(e.target)) closeMenu();
+      });
+
+      designMenu.addEventListener('click', (e) => {
+        const item = e.target.closest('.secret-menu-item');
+        if (!item) return;
+        try { sessionStorage.setItem(DESIGN_KEY, item.dataset.design); } catch (err) {}
+        markSelected();
+        closeMenu();
+        // Re-run the prototype so the new design takes effect from the start.
+        try { sessionStorage.removeItem('launchpad-step'); } catch (err) {}
+        location.reload();
+      });
+    })();
+  </script>
 
   <script>
     // ===== Secret prototype menu (hover near top-left corner) =====
@@ -240,8 +333,8 @@
       // Reveal the button when the cursor is near the corner; hide otherwise
       // (unless the menu is open). JS proximity avoids a corner hotspot that
       // would block the app's window controls underneath.
-      document.addEventListener('mousemove', (e) => {
-        const near = e.clientX < 140 && e.clientY < 140;
+      window.addEventListener('proto-cursor', (e) => {
+        const near = e.detail.x < 140 && e.detail.y < 140;
         if (near || menuOpen) {
           secretBtn.classList.add('visible');
         } else {
@@ -405,11 +498,15 @@
     // ---- Dismiss into the landing experience ----
     function dismissToApp() {
       const appIframe = document.querySelector('.app-background iframe');
+      // Design B lands on the #tractor-channel; Design A (default) on Launchpad.
+      let design = 'a';
+      try { design = sessionStorage.getItem('launchpad-design') || 'a'; } catch (e) {}
       const data = {
         type: 'onboarding-complete',
         useCases: personalization.useCases,
         familiarity: personalization.familiarity,
-        userName: 'Arcadio'
+        userName: 'Arcadio',
+        landOn: design === 'b' ? 'new-channel' : 'slackbot-dm'
       };
       try { localStorage.setItem('launchpad-onboarding', JSON.stringify(data)); } catch (e) {}
 

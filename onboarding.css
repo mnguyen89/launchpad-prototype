@@ -496,3 +496,25 @@ body {
 }
 .secret-menu-item:hover { background: #f4f4f5; }
 .secret-menu-item svg { color: #5e5d60; flex-shrink: 0; }
+
+/* Right-side variant (design switcher) */
+.secret-btn.right { left: auto; right: 12px; }
+.secret-menu.right { left: auto; right: 12px; }
+
+/* Active/selected menu item (current design choice) */
+.secret-menu-item .secret-check {
+  margin-left: auto;
+  color: #007a5a;
+  opacity: 0;
+  flex-shrink: 0;
+}
+.secret-menu-item.selected .secret-check { opacity: 1; }
+.secret-menu-item .secret-sub {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: #5e5d60;
+  margin-top: 2px;
+}
+.secret-menu-item { align-items: flex-start; }
+.secret-menu-item > span:first-of-type { display: flex; flex-direction: column; }

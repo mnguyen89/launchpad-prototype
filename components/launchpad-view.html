@@ -512,5 +512,13 @@
     announceReady();
     setTimeout(announceReady, 500);
   </script>
+  <script>
+    // Relay cursor up so the top-window secret buttons stay reachable here.
+    document.addEventListener('mousemove', (e) => {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ __cursor: true, x: e.clientX, y: e.clientY }, '*');
+      }
+    });
+  </script>
 </body>
 </html>

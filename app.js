@@ -1,3 +1,26 @@
+// ===== Cursor relay (keeps the parent's secret buttons reachable) =====
+// Forward this frame's cursor position up to the parent, translating any
+// coordinates relayed from our own child iframes into this frame's space.
+(function () {
+  function up(x, y) {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ __cursor: true, x, y }, '*');
+    }
+  }
+  document.addEventListener('mousemove', (e) => up(e.clientX, e.clientY));
+  window.addEventListener('message', (e) => {
+    if (!e.data || !e.data.__cursor) return;
+    const frames = document.querySelectorAll('iframe');
+    for (const f of frames) {
+      if (f.contentWindow === e.source) {
+        const r = f.getBoundingClientRect();
+        up(e.data.x + r.left, e.data.y + r.top);
+        break;
+      }
+    }
+  });
+})();
+
 // Detect if running inside an iframe and add embedded class
 if (window !== window.parent) {
   document.documentElement.classList.add('embedded');
@@ -7,11 +30,16 @@ if (window !== window.parent) {
   // Store personalization data until slackbot-dm-view iframe is ready
   let pendingPersonalization = null;
   let slackbotDmViewReady = false;
+  let landOnView = 'slackbot-dm'; // which view to land on after the modal closes
 
   // Listen for parent to show/hide top-bar items and relay personalization
   window.addEventListener('message', (e) => {
     if (e.data === 'modal-dismissed') {
       document.body.classList.remove('modal-active');
+      // Design B lands directly on the #tractor-channel instead of Launchpad.
+      if (landOnView === 'new-channel' && typeof window.landOnTractorChannel === 'function') {
+        window.landOnTractorChannel();
+      }
       // Reveal sidebar (1.44s delay)
       const sidebar = document.querySelector('.sidebar');
       if (sidebar) {
@@ -36,6 +64,7 @@ if (window !== window.parent) {
     // Relay onboarding-complete to the slackbot-dm-view iframe
     if (e.data && e.data.type === 'onboarding-complete') {
       pendingPersonalization = e.data;
+      if (e.data.landOn) landOnView = e.data.landOn;
       sendToSlackbotDmView(e.data);
     }
     // Slackbot DM view iframe signals it's ready
@@ -157,6 +186,13 @@ function showView(viewName, addToHistory) {
   }
   updateNavButtons();
 }
+
+// Design B entry point: land on the #tractor-channel after the modal closes.
+window.landOnTractorChannel = function () {
+  const channelRow = document.querySelector('.channel-row[data-view="new-channel"]');
+  selectSidebarItem('new-channel');
+  showView('new-channel');
+};
 
 // Listen for substate changes from slackbot-dm-view iframe
 window.addEventListener('message', (e) => {
