@@ -1360,6 +1360,30 @@ body.embedded .top-bar-right {
   border-bottom: 1px solid rgba(94, 93, 96, 0.13);
   transform: rotate(45deg);
 }
+.pocket-guide__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: #5e5d60;
+  cursor: pointer;
+  opacity: 0;
+  transition: background 0.12s ease, opacity 0.12s ease;
+  z-index: 1;
+}
+.pocket-guide__close svg { width: 14px; height: 14px; display: block; }
+.pocket-guide__close:hover { background: #f0f0f0; color: #1d1c1d; }
+/* Only show the dismiss button when the peek is pinned (click-opened) */
+.pocket-guide.pinned .pocket-guide__close { opacity: 1; }
+/* Reserve space on the right so the title clears the close button */
+.pocket-guide.pinned .pocket-guide__header { padding-right: 40px; }
 .pocket-guide__header {
   display: flex;
   align-items: center;

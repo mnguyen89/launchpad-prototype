@@ -53,6 +53,10 @@ if (window !== window.parent) {
         };
         setTimeout(playCardIntro, 200);
         if (channelIframe) channelIframe.addEventListener('load', playCardIntro);
+        // Auto-open the setup peek (pinned) 1s after the app lands.
+        setTimeout(() => {
+          if (typeof showPocketGuide === 'function') showPocketGuide(true);
+        }, 1000);
       } else {
         // ===== Design A: land on Launchpad (sidebar reveals after a beat) =====
         if (sidebar) {
@@ -74,6 +78,10 @@ if (window !== window.parent) {
       if (pendingPersonalization) {
         sendToSlackbotDmView(pendingPersonalization);
       }
+    }
+    // Parent (a secret menu) opened — dismiss the setup peek.
+    if (e.data === 'dismiss-peek' && typeof hidePocketGuide === 'function') {
+      hidePocketGuide();
     }
     // Relay onboarding-complete to the slackbot-dm-view iframe
     if (e.data && e.data.type === 'onboarding-complete') {
@@ -293,12 +301,49 @@ if (workspaceHome) {
   });
 }
 
+// ===== Sidebar setup peek (Pocket Guide) — Design B only =====
+const setupRow = document.querySelector('.page-row.setup-row');
+const pocketGuide = document.getElementById('pocketGuide');
+const pocketGuideClose = document.getElementById('pocketGuideClose');
+let pocketHideTimer = null;
+let pocketPinned = false; // pinned = stays open until X dismiss (click/auto-open)
+
+function positionPocketGuide() {
+  if (!setupRow || !pocketGuide) return;
+  const r = setupRow.getBoundingClientRect();
+  // Flush to the right of the sidebar row, tail aligned near the row top.
+  pocketGuide.style.left = (r.right + 10) + 'px';
+  pocketGuide.style.top = (r.top - 8) + 'px';
+}
+function showPocketGuide(pin) {
+  if (!setupRow || !pocketGuide || !window.__designB) return;
+  cancelPocketHide();
+  positionPocketGuide();
+  if (pin) {
+    pocketPinned = true;
+    pocketGuide.classList.add('pinned');
+  }
+  pocketGuide.classList.add('visible');
+  pocketGuide.setAttribute('aria-hidden', 'false');
+}
+function hidePocketGuide() {
+  if (!pocketGuide) return;
+  pocketPinned = false;
+  pocketGuide.classList.remove('visible', 'pinned');
+  pocketGuide.setAttribute('aria-hidden', 'true');
+}
+function schedulePocketHide() {
+  if (pocketPinned) return; // pinned peeks ignore hover-out
+  pocketHideTimer = setTimeout(hidePocketGuide, 150);
+}
+function cancelPocketHide() { if (pocketHideTimer) { clearTimeout(pocketHideTimer); pocketHideTimer = null; } }
+
 // Page rows (Slackbot, Directory, Huddles)
 document.querySelectorAll('.page-row').forEach(row => {
   row.addEventListener('click', () => {
-    // Design B: the "Set up your Slack" row opens the peek instead of a view.
+    // Design B: the "Set up your Slack" row opens the peek (pinned) instead of a view.
     if (window.__designB && row.classList.contains('setup-row')) {
-      showPocketGuide();
+      showPocketGuide(true);
       return;
     }
     clearAllSelections();
@@ -307,37 +352,22 @@ document.querySelectorAll('.page-row').forEach(row => {
   });
 });
 
-// ===== Sidebar setup peek (Pocket Guide) — Design B only =====
-const setupRow = document.querySelector('.page-row.setup-row');
-const pocketGuide = document.getElementById('pocketGuide');
-let pocketHideTimer = null;
-
-function showPocketGuide() {
-  if (!setupRow || !pocketGuide || !window.__designB) return;
-  const r = setupRow.getBoundingClientRect();
-  // Flush to the right of the sidebar row, tail aligned near the row top.
-  pocketGuide.style.left = (r.right + 10) + 'px';
-  pocketGuide.style.top = (r.top - 8) + 'px';
-  pocketGuide.classList.add('visible');
-  pocketGuide.setAttribute('aria-hidden', 'false');
-}
-function hidePocketGuide() {
-  if (!pocketGuide) return;
-  pocketGuide.classList.remove('visible');
-  pocketGuide.setAttribute('aria-hidden', 'true');
-}
-function schedulePocketHide() { pocketHideTimer = setTimeout(hidePocketGuide, 150); }
-function cancelPocketHide() { if (pocketHideTimer) { clearTimeout(pocketHideTimer); pocketHideTimer = null; } }
-
 if (setupRow && pocketGuide) {
   setupRow.addEventListener('mouseenter', () => {
     if (!window.__designB) return;
     cancelPocketHide();
-    showPocketGuide();
+    showPocketGuide(false);
   });
   setupRow.addEventListener('mouseleave', schedulePocketHide);
   pocketGuide.addEventListener('mouseenter', cancelPocketHide);
   pocketGuide.addEventListener('mouseleave', schedulePocketHide);
+  // X dismiss button.
+  if (pocketGuideClose) {
+    pocketGuideClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hidePocketGuide();
+    });
+  }
   // Toggle tasks done on click (matches the template behavior).
   pocketGuide.querySelectorAll('.pocket-guide__task').forEach(task => {
     task.addEventListener('click', () => task.classList.toggle('pocket-guide__task--done'));
@@ -422,6 +452,7 @@ let connectAppsHideTimeout = null;
 
 function showConnectAppsMenu() {
   if (!connectAppsTrigger || !connectAppsMenu) return;
+  if (typeof hidePocketGuide === 'function') hidePocketGuide(); // close the setup peek
   const rect = connectAppsTrigger.getBoundingClientRect();
   connectAppsMenu.style.left = (rect.right + 8) + 'px';
   connectAppsMenu.style.top = (rect.top - 8) + 'px';

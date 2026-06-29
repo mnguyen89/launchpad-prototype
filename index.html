@@ -263,6 +263,14 @@
         if (f) { const r = f.getBoundingClientRect(); emit(e.data.x + r.left, e.data.y + r.top); }
       });
     })();
+
+    // Tell the app iframe to dismiss the setup peek (when a secret menu opens).
+    function dismissAppPeek() {
+      const appIframe = document.querySelector('.app-background iframe');
+      if (appIframe && appIframe.contentWindow) {
+        appIframe.contentWindow.postMessage('dismiss-peek', '*');
+      }
+    }
   </script>
 
   <script>
@@ -301,6 +309,7 @@
         open = !open;
         designMenu.classList.toggle('visible', open);
         designBtn.classList.toggle('active', open);
+        if (open) dismissAppPeek();
       });
 
       document.addEventListener('click', (e) => {
@@ -353,6 +362,7 @@
         menuOpen = !menuOpen;
         secretMenu.classList.toggle('visible', menuOpen);
         secretBtn.classList.toggle('active', menuOpen);
+        if (menuOpen) dismissAppPeek();
       });
 
       document.addEventListener('click', (e) => {
