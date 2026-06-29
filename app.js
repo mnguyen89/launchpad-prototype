@@ -36,25 +36,39 @@ if (window !== window.parent) {
   window.addEventListener('message', (e) => {
     if (e.data === 'modal-dismissed') {
       document.body.classList.remove('modal-active');
-      // Design B lands directly on the #tractor-channel instead of Launchpad.
-      if (landOnView === 'new-channel' && typeof window.landOnTractorChannel === 'function') {
-        window.landOnTractorChannel();
-      }
-      // Reveal sidebar (1.44s delay)
       const sidebar = document.querySelector('.sidebar');
-      if (sidebar) {
-        setTimeout(() => {
-          requestAnimationFrame(() => sidebar.classList.add('revealed'));
-        }, 1440);
 
-        // Sidebar width and content fade both finish at 1.2s after reveal
-        // 1440ms start + 1200ms = 2640ms
-        setTimeout(() => {
-          const slackbotDmIframe = document.querySelector('.slackbot-dm-view-iframe');
-          if (slackbotDmIframe && slackbotDmIframe.contentWindow) {
-            slackbotDmIframe.contentWindow.postMessage('sidebar-content-ready', '*');
+      if (landOnView === 'new-channel') {
+        // ===== Design B: land on #tractor-channel =====
+        // Sidebar is open right away; the channel's cards animate in instead.
+        if (typeof window.landOnTractorChannel === 'function') window.landOnTractorChannel();
+        // Sidebar is open instantly (no slide-in) for Design B.
+        if (sidebar) sidebar.classList.add('instant', 'revealed');
+        // Tell the channel view to play its intro animation.
+        const channelIframe = document.querySelector('.channel-view-iframe');
+        const playCardIntro = () => {
+          if (channelIframe && channelIframe.contentWindow) {
+            channelIframe.contentWindow.postMessage('channel-intro', '*');
           }
-        }, 2640);
+        };
+        setTimeout(playCardIntro, 200);
+        if (channelIframe) channelIframe.addEventListener('load', playCardIntro);
+      } else {
+        // ===== Design A: land on Launchpad (sidebar reveals after a beat) =====
+        if (sidebar) {
+          setTimeout(() => {
+            requestAnimationFrame(() => sidebar.classList.add('revealed'));
+          }, 1440);
+
+          // Sidebar width and content fade both finish at 1.2s after reveal
+          // 1440ms start + 1200ms = 2640ms
+          setTimeout(() => {
+            const slackbotDmIframe = document.querySelector('.slackbot-dm-view-iframe');
+            if (slackbotDmIframe && slackbotDmIframe.contentWindow) {
+              slackbotDmIframe.contentWindow.postMessage('sidebar-content-ready', '*');
+            }
+          }, 2640);
+        }
       }
       // Send any pending personalization after dismiss
       if (pendingPersonalization) {
@@ -65,6 +79,8 @@ if (window !== window.parent) {
     if (e.data && e.data.type === 'onboarding-complete') {
       pendingPersonalization = e.data;
       if (e.data.landOn) landOnView = e.data.landOn;
+      // Design B (lands on the channel) enables the sidebar setup peek.
+      window.__designB = e.data.landOn === 'new-channel';
       sendToSlackbotDmView(e.data);
     }
     // Slackbot DM view iframe signals it's ready
@@ -280,11 +296,53 @@ if (workspaceHome) {
 // Page rows (Slackbot, Directory, Huddles)
 document.querySelectorAll('.page-row').forEach(row => {
   row.addEventListener('click', () => {
+    // Design B: the "Set up your Slack" row opens the peek instead of a view.
+    if (window.__designB && row.classList.contains('setup-row')) {
+      showPocketGuide();
+      return;
+    }
     clearAllSelections();
     row.classList.add('active-page');
     showView(row.dataset.view);
   });
 });
+
+// ===== Sidebar setup peek (Pocket Guide) — Design B only =====
+const setupRow = document.querySelector('.page-row.setup-row');
+const pocketGuide = document.getElementById('pocketGuide');
+let pocketHideTimer = null;
+
+function showPocketGuide() {
+  if (!setupRow || !pocketGuide || !window.__designB) return;
+  const r = setupRow.getBoundingClientRect();
+  // Flush to the right of the sidebar row, tail aligned near the row top.
+  pocketGuide.style.left = (r.right + 10) + 'px';
+  pocketGuide.style.top = (r.top - 8) + 'px';
+  pocketGuide.classList.add('visible');
+  pocketGuide.setAttribute('aria-hidden', 'false');
+}
+function hidePocketGuide() {
+  if (!pocketGuide) return;
+  pocketGuide.classList.remove('visible');
+  pocketGuide.setAttribute('aria-hidden', 'true');
+}
+function schedulePocketHide() { pocketHideTimer = setTimeout(hidePocketGuide, 150); }
+function cancelPocketHide() { if (pocketHideTimer) { clearTimeout(pocketHideTimer); pocketHideTimer = null; } }
+
+if (setupRow && pocketGuide) {
+  setupRow.addEventListener('mouseenter', () => {
+    if (!window.__designB) return;
+    cancelPocketHide();
+    showPocketGuide();
+  });
+  setupRow.addEventListener('mouseleave', schedulePocketHide);
+  pocketGuide.addEventListener('mouseenter', cancelPocketHide);
+  pocketGuide.addEventListener('mouseleave', schedulePocketHide);
+  // Toggle tasks done on click (matches the template behavior).
+  pocketGuide.querySelectorAll('.pocket-guide__task').forEach(task => {
+    task.addEventListener('click', () => task.classList.toggle('pocket-guide__task--done'));
+  });
+}
 
 // Channel rows (exclude add-row)
 document.querySelectorAll('.channel-row:not(.add-row)').forEach(row => {

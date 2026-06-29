@@ -632,6 +632,24 @@ body.embedded .top-bar-right {
   will-change: auto;
 }
 
+/* Design B: sidebar already open, no entrance animation */
+.sidebar.instant {
+  transition: none;
+  width: 270px;
+}
+.sidebar.instant .sidebar-header,
+.sidebar.instant .sidebar-content,
+.sidebar.instant .sidebar-bottom {
+  transition: none;
+  opacity: 1;
+  transform: none;
+}
+/* Design B: no fade on the non-essential sections either — fully visible */
+.sidebar.instant .sidebar-fadeable {
+  opacity: 1;
+  transition: none;
+}
+
 .sidebar-header,
 .sidebar-content,
 .sidebar-bottom {
@@ -1306,3 +1324,113 @@ body.embedded .top-bar-right {
 
 /* Active setup row: white selected pill with dark icon (matches Figma) */
 .page-row.setup-row.active-page .page-row-leadicon { color: var(--sk-primary-text); }
+
+/* ============================================================
+   Sidebar Peek — Pocket Guide (Design B)
+   Checklist popover that flies out from "Set up your Slack".
+   Ported from Template/components.html.
+   ============================================================ */
+.pocket-guide {
+  position: fixed;
+  width: 332px;
+  background: #ffffff;
+  border: 1px solid rgba(94, 93, 96, 0.13);
+  border-radius: 12px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28), 0 0 40px rgba(0, 0, 0, 0.18);
+  font-family: var(--sk-font);
+  z-index: 99999;
+  opacity: 0;
+  transform: translateX(-6px);
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.pocket-guide.visible {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+.pocket-guide__tail {
+  position: absolute;
+  left: -6px;
+  top: 24px;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-left: 1px solid rgba(94, 93, 96, 0.13);
+  border-bottom: 1px solid rgba(94, 93, 96, 0.13);
+  transform: rotate(45deg);
+}
+.pocket-guide__header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px 12px 24px;
+  border-bottom: 1px solid rgba(94, 93, 96, 0.13);
+}
+.pocket-guide__title {
+  margin: 0;
+  font-weight: 900;
+  font-size: 18px;
+  line-height: 24px;
+  color: #1d1c1d;
+}
+.pocket-guide__emoji { margin-right: 8px; }
+.pocket-guide__list { display: flex; flex-direction: column; gap: 4px; padding: 12px 8px 16px; }
+.pocket-guide__task {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 12px 8px 12px 17px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.pocket-guide__task:hover { background: #f8f8f8; }
+.pocket-guide__check {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  border: 2px solid #7d95eb;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pocket-guide__check svg { width: 14px; height: 14px; color: #fff; display: none; }
+.pocket-guide__task--done .pocket-guide__check { background: #7d95eb; }
+.pocket-guide__task--done .pocket-guide__check svg { display: block; }
+.pocket-guide__content { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+.pocket-guide__task-title {
+  font-weight: 900;
+  font-size: 15px;
+  line-height: 22px;
+  color: #1d1c1d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pocket-guide__task-sub {
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 18px;
+  color: #5e5d60;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pocket-guide__task--done .pocket-guide__task-title { text-decoration: line-through; color: #5e5d60; }
+.pocket-guide__caret {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5e5d60;
+}
+.pocket-guide__caret svg { width: 15px; height: 15px; display: block; }

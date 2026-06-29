@@ -296,6 +296,27 @@
       transform: translateY(-1px);
     }
 
+    /* Intro animation (Design B): cards fade + rise in, staggered */
+    .channel-view.intro .channel-intro-title,
+    .channel-view.intro .channel-intro-desc,
+    .channel-view.intro .channel-action-card {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    .channel-view.intro.play .channel-intro-title,
+    .channel-view.intro.play .channel-intro-desc,
+    .channel-view.intro.play .channel-action-card {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .channel-view.intro.play .channel-intro-desc { transition-delay: 0.08s; }
+    .channel-view.intro.play .channel-action-card:nth-child(1) { transition-delay: 0.18s; }
+    .channel-view.intro.play .channel-action-card:nth-child(2) { transition-delay: 0.28s; }
+    .channel-view.intro.play .channel-action-card:nth-child(3) { transition-delay: 0.38s; }
+    /* Cards keep their hover lift after the intro settles. */
+    .channel-view.intro.play .channel-action-card:hover { transform: translateY(-4px); }
+
     .channel-action-card img {
       width: 100%;
       height: auto;
@@ -722,6 +743,21 @@
       const hasText = composerInput.textContent.trim().length > 0;
       if (!hasText) composerInput.innerHTML = '';
       sendGroup.classList.toggle('active', hasText);
+    });
+
+    // Design B intro: animate the welcome + action cards in on request.
+    const channelViewEl = document.querySelector('.channel-view');
+    let introPlayed = false;
+    function playChannelIntro() {
+      if (introPlayed || !channelViewEl) return;
+      introPlayed = true;
+      channelViewEl.classList.add('intro');           // set initial hidden state
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => channelViewEl.classList.add('play'));
+      });
+    }
+    window.addEventListener('message', (e) => {
+      if (e.data === 'channel-intro') playChannelIntro();
     });
   </script>
   <script>
