@@ -1,0 +1,34 @@
+/* === Bundled fonts (exact files from the design) ===
+   Heading: ITC Avant Garde Gothic Std — Demi  (a.k.a. "Avant Garde For Salesforce")
+   Body:    Lato (Regular / Bold / Black)
+   All served locally from ./fonts so the prototype is self-contained.
+   Falls back to the default Slack stack if a file is unavailable.
+   Mirrors the look-ahead prototype's font handling. */
+@font-face {
+  font-family: 'Avant Garde For Salesforce';
+  src: url('fonts/ITCAvantGardeStd-Demi.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lato';
+  src: url('fonts/lato-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lato';
+  src: url('fonts/lato-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lato';
+  src: url('fonts/lato-black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}

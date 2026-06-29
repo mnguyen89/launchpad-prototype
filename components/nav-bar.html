@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nav Bar Component</title>
+  <link rel="stylesheet" href="../fonts.css">
+  <style>
+    /* ============================================
+       Slack Nav Bar (Icon Rail) Component
+       ============================================
+       Width: 76px fixed
+       Expects a dark aubergine parent background.
+       Images: workspace.png, profile.png (36x36)
+       ============================================ */
+
+    /* === Design Tokens === */
+    :root {
+      /* Brand */
+      --sk-aubergine: #4A154B;
+      --sk-aubergine-dark: #611F69;
+      --sk-white: #FFFFFF;
+
+      /* Purple accents */
+      --sk-purple-bg-25: rgba(249, 237, 255, 0.25);
+      --sk-purple-bg-80: rgba(244, 218, 255, 0.80);
+      --sk-purple-badge: #EABDFB;
+
+      /* Typography */
+      --sk-font: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+
+      /* Spacing (4px grid) */
+      --sk-space-4: 4px;
+      --sk-space-8: 8px;
+      --sk-space-12: 12px;
+      --sk-space-16: 16px;
+      --sk-space-20: 20px;
+
+      /* Shape */
+      --sk-radius-lg: 8px;
+      --sk-radius-circle: 50%;
+
+      /* Elevation */
+      --sk-shadow-low: 0 1px 3px rgba(0, 0, 0, 0.10);
+
+      /* Motion */
+      --sk-ease-productive: cubic-bezier(0.165, 0.84, 0.44, 1);
+      --sk-duration-fast: 0.125s;
+    }
+
+    /* === Base === */
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      font-family: var(--sk-font);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* === Nav Bar === */
+    .nav-bar {
+      width: 76px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px 0 0;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    /* -- Top: Workspace Icon -- */
+    .nav-top {
+      padding-bottom: var(--sk-space-20);
+    }
+
+    .workspace-icon {
+      width: 36px;
+      height: 36px;
+    }
+
+    .workspace-img {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--sk-radius-lg);
+      box-shadow: var(--sk-shadow-low);
+    }
+
+    /* -- Middle: Tab Bar -- */
+    .nav-middle {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--sk-space-16);
+      padding: 0 var(--sk-space-12);
+      overflow: hidden;
+    }
+
+    /* -- Tab (52x52 hit area) -- */
+    .nav-tab {
+      width: 52px;
+      height: 52px;
+      cursor: pointer;
+      position: relative;
+      overflow: visible;
+    }
+
+    .nav-tab-backing {
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--sk-radius-lg);
+      background: transparent;
+      top: 0;
+      left: 8px;
+      transition: background var(--sk-duration-fast) var(--sk-ease-productive);
+    }
+
+    .nav-tab:hover .nav-tab-backing {
+      background: var(--sk-purple-bg-25);
+    }
+
+    .nav-tab-backing.active-backing {
+      background: var(--sk-purple-bg-25);
+    }
+
+    .nav-tab-icon {
+      position: absolute;
+      z-index: 1;
+      width: 20px;
+      height: 20px;
+      top: 8px;
+      left: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--sk-white);
+    }
+
+    .nav-tab-label {
+      position: absolute;
+      z-index: 1;
+      font-size: 11px;
+      color: var(--sk-white);
+      font-weight: 700;
+      line-height: 12px;
+      text-align: center;
+      top: 38px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+
+    .nav-notifier {
+      position: absolute;
+      top: 4px;
+      left: 34px;
+      width: 6px;
+      height: 6px;
+      background: var(--sk-purple-badge);
+      border-radius: var(--sk-radius-circle);
+      z-index: 2;
+    }
+
+    /* -- Bottom: Action Button + Profile -- */
+    .nav-bottom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--sk-space-16);
+      padding: var(--sk-space-12) 0;
+    }
+
+    .action-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: var(--sk-purple-bg-25);
+      border-radius: 24px;
+      color: var(--sk-purple-bg-80);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--sk-duration-fast) var(--sk-ease-productive);
+    }
+
+    .action-btn:hover {
+      background: rgba(249, 237, 255, 0.35);
+    }
+
+    .action-btn:focus-visible {
+      outline: 2px solid var(--sk-white);
+      outline-offset: 2px;
+    }
+
+    .profile-avatar img {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--sk-radius-lg);
+    }
+
+    /* More Menu */
+    .nav-tab[data-tab="more"] {
+      position: relative;
+    }
+
+    .more-menu {
+      display: none;
+      position: fixed;
+      width: 360px;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid rgba(94, 93, 96, 0.13);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+      flex-direction: column;
+      z-index: 10000;
+      overflow: hidden;
+      font-family: var(--sk-font);
+    }
+
+    .more-menu.visible {
+      display: flex;
+    }
+
+    .more-menu-body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .more-menu-header {
+      padding: 8px 16px;
+      font-size: 15px;
+      font-weight: 900;
+      color: #1D1C1D;
+      line-height: 22px;
+    }
+
+    .more-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background 0.125s ease;
+    }
+
+    .more-menu-item:hover {
+      background: #F5F5F5;
+    }
+
+    .more-menu-icon-wrap {
+      width: 36px;
+      height: 36px;
+      background: #F9EDFF;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .more-menu-label {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .more-menu-primary {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1D1C1D;
+      line-height: 22px;
+    }
+
+    .more-menu-secondary {
+      font-size: 13px;
+      font-weight: 400;
+      color: #616061;
+      line-height: 18px;
+    }
+
+    .more-menu-caret {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      color: #1D1C1D;
+    }
+
+    .more-menu-divider {
+      height: 1px;
+      background: rgba(94, 93, 96, 0.13);
+      margin: 0 16px;
+    }
+
+    .more-menu-footer {
+      padding: 12px 16px;
+      background: #F8F8F8;
+      border-top: 1px solid rgba(94, 93, 96, 0.13);
+    }
+
+    .more-menu-customize {
+      font-size: 13px;
+      font-weight: 400;
+      color: #1264A3;
+      cursor: pointer;
+      line-height: 18px;
+    }
+
+    .more-menu-customize:hover {
+      text-decoration: underline;
+    }
+
+    /* App menu items */
+    .app-item {
+      border-bottom: 1px solid rgba(94, 93, 96, 0.13);
+    }
+
+    .app-item:last-child {
+      border-bottom: none;
+    }
+
+    .app-icon-wrap {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      border: 1px solid rgba(94, 93, 96, 0.13);
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.10);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .app-icon-wrap img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =============================================
+       Nav Bar Component
+       =============================================
+       Usage:
+       1. Copy the <nav class="nav-bar"> block into your layout.
+       2. Include the CSS above (tokens + nav-bar rules).
+       3. Include the JS below for tab selection behavior.
+       4. Provide workspace.png and profile.png images.
+       5. To set the active tab, add class="active" to
+          the .nav-tab and class="active-backing" to its
+          .nav-tab-backing child.
+       ============================================= -->
+
+  <nav class="nav-bar">
+    <div class="nav-top">
+      <div class="workspace-icon">
+        <img src="../images/workspace.png" alt="Workspace" class="workspace-img">
+      </div>
+    </div>
+
+    <div class="nav-middle">
+      <!-- Home (active) -->
+      <div class="nav-tab active" data-tab="home">
+        <div class="nav-tab-backing active-backing"></div>
+        <div class="nav-tab-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.90962 1.85133C9.56873 1.40669 10.4322 1.40662 11.0913 1.85133L18.1704 6.62867C18.513 6.86049 18.6038 7.32662 18.3725 7.66969C18.1409 8.01286 17.6738 8.10314 17.3305 7.87184L17.0004 7.6482V14.6599C17.0004 16.7308 15.3213 18.4995 13.2504 18.4998H6.75044C4.67938 18.4998 3.00044 16.731 3.00044 14.6599V7.6482L2.67037 7.87184C2.32716 8.10344 1.86018 8.01268 1.62837 7.66969C1.39696 7.32647 1.48751 6.86038 1.83052 6.62867L8.90962 1.85133ZM12.0004 9.99977C11.4482 9.99977 11.0005 10.4476 11.0004 10.9998V11.9998C11.0004 12.552 11.4482 12.9998 12.0004 12.9998H13.0004C13.5525 12.9995 14.0004 12.5519 14.0004 11.9998V10.9998C14.0004 10.4477 13.5525 10 13.0004 9.99977H12.0004Z" fill="currentColor"/></svg>
+        </div>
+        <span class="nav-tab-label">Home</span>
+        <span class="nav-notifier"></span>
+      </div>
+
+      <!-- Files -->
+      <div class="nav-tab" data-tab="files">
+        <div class="nav-tab-backing"></div>
+        <div class="nav-tab-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7.30664 1.5C7.96661 1.50009 8.59307 1.7901 9.02051 2.29297L10.2471 3.73535C10.3895 3.90292 10.5984 3.99991 10.8184 4H14.75C16.8211 4 18.5 5.67893 18.5 7.75V14.75C18.5 16.8211 16.8211 18.5 14.75 18.5H5.25C3.17893 18.5 1.5 16.8211 1.5 14.75V5.25C1.5 3.17893 3.17893 1.5 5.25 1.5H7.30664ZM5.25 9C4.00736 9 3 10.0074 3 11.25V14.75C3 15.9926 4.00736 17 5.25 17H14.75C15.9926 17 17 15.9926 17 14.75V11.25C17 10.0074 15.9926 9 14.75 9H5.25ZM5.25 3C4.00736 3 3 4.00736 3 5.25V8.24902C3.62669 7.77841 4.40595 7.5 5.25 7.5H14.75C15.5941 7.5 16.3733 7.77841 17 8.24902V7.75C17 6.50736 15.9926 5.5 14.75 5.5H10.8184C10.1584 5.49991 9.53193 5.20989 9.10449 4.70703L7.87793 3.26465C7.73549 3.09708 7.52656 3.00009 7.30664 3H5.25Z" fill="currentColor"/></svg>
+        </div>
+        <span class="nav-tab-label">Files</span>
+      </div>
+
+      <!-- Tools -->
+      <div class="nav-tab" data-tab="tools">
+        <div class="nav-tab-backing"></div>
+        <div class="nav-tab-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.42639 1.71967C5.71928 1.42677 6.19404 1.42678 6.48693 1.71967L9.85119 5.08392L12.567 2.3681C13.6409 1.29441 15.3818 1.29435 16.4557 2.3681L17.6305 3.54291C18.7044 4.61685 18.7044 6.35862 17.6305 7.43256L14.9147 10.1474L18.2799 13.5126C18.4204 13.6532 18.4996 13.8441 18.4996 14.0429C18.4996 14.2417 18.4205 14.4326 18.2799 14.5732L14.5885 18.2646C14.2957 18.5574 13.8209 18.5572 13.528 18.2646L10.1627 14.8994L8.28576 16.7773C8.19349 16.8695 8.07864 16.9363 7.95275 16.9706L2.44787 18.4726C2.18834 18.5433 1.9106 18.4694 1.72033 18.2792C1.53012 18.089 1.45634 17.8112 1.52697 17.5517L3.02795 12.0468L3.06018 11.954C3.09766 11.8645 3.15231 11.7829 3.22131 11.7138L5.09924 9.83588L1.73498 6.47162C1.44213 6.17872 1.4421 5.70395 1.73498 5.41107L5.42639 1.71967ZM4.42248 12.6328L3.31897 16.6796L7.36584 15.5751L7.43908 15.4999L4.4967 12.5576L4.42248 12.6328ZM11.2233 13.8388L14.0582 16.6738L16.6891 14.0429L15.6432 12.997L14.3658 14.2744C14.1706 14.4696 13.8541 14.4696 13.6588 14.2744C13.4636 14.0791 13.4636 13.7626 13.6588 13.5673L14.9362 12.29L13.8541 11.2079L11.2233 13.8388ZM5.55725 11.497L8.49963 14.4394L14.4508 8.4892L11.5084 5.54681L5.55725 11.497ZM3.3258 5.94135L6.15979 8.77533L8.79065 6.14447L7.67248 5.02631L6.43225 6.26752C6.23703 6.46274 5.92049 6.46265 5.72522 6.26752C5.52995 6.07225 5.52995 5.75575 5.72522 5.56049L6.96545 4.31927L5.95666 3.31049L3.3258 5.94135ZM15.3951 3.42865C14.907 2.94068 14.1157 2.94075 13.6276 3.42865L12.569 4.48627L15.5113 7.42865L16.5699 6.37201C17.0581 5.88389 17.058 5.09259 16.5699 4.60443L15.3951 3.42865Z" fill="currentColor"/></svg>
+        </div>
+        <span class="nav-tab-label">Tools</span>
+
+        <!-- Tools Menu Popover -->
+        <div class="more-menu tools-menu">
+          <div class="more-menu-body">
+            <div class="more-menu-header">Recommended apps</div>
+            <div class="more-menu-item app-item">
+              <div class="app-icon-wrap"><img src="../images/app-gcal.png" alt=""></div>
+              <div class="more-menu-label"><span class="more-menu-primary">Google calendar</span></div>
+            </div>
+            <div class="more-menu-item app-item">
+              <div class="app-icon-wrap"><img src="../images/app-gdrive.png" alt=""></div>
+              <div class="more-menu-label"><span class="more-menu-primary">Google Drive</span></div>
+            </div>
+            <div class="more-menu-item app-item">
+              <div class="app-icon-wrap"><img src="../images/app-outlook-cal.png" alt=""></div>
+              <div class="more-menu-label"><span class="more-menu-primary">Outlook Calendar</span></div>
+            </div>
+            <div class="more-menu-item app-item">
+              <div class="app-icon-wrap"><img src="../images/app-onedrive.png" alt=""></div>
+              <div class="more-menu-label"><span class="more-menu-primary">Microsoft Onedrive</span></div>
+            </div>
+          </div>
+          <div class="more-menu-footer">
+            <span class="more-menu-customize">Browse all apps</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- More -->
+      <div class="nav-tab" data-tab="more">
+        <div class="nav-tab-backing"></div>
+        <div class="nav-tab-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3.75 8.25C4.7165 8.25 5.5 9.0335 5.5 10C5.5 10.9665 4.7165 11.75 3.75 11.75C2.7835 11.75 2 10.9665 2 10C2 9.0335 2.7835 8.25 3.75 8.25ZM10 8.25C10.9665 8.25 11.75 9.0335 11.75 10C11.75 10.9665 10.9665 11.75 10 11.75C9.0335 11.75 8.25 10.9665 8.25 10C8.25 9.0335 9.0335 8.25 10 8.25ZM16.25 8.25C17.2165 8.25 18 9.0335 18 10C18 10.9665 17.2165 11.75 16.25 11.75C15.2835 11.75 14.5 10.9665 14.5 10C14.5 9.0335 15.2835 8.25 16.25 8.25Z" fill="currentColor"/></svg>
+        </div>
+        <span class="nav-tab-label">More</span>
+
+        <!-- More Menu Popover -->
+        <div class="more-menu">
+          <div class="more-menu-body">
+            <div class="more-menu-header">More</div>
+            <div class="more-menu-item">
+              <div class="more-menu-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M2.5 3.8613C2.50033 2.12508 4.38396 1.04314 5.88379 1.91794L16.4072 8.05662C17.895 8.9249 17.895 11.075 16.4072 11.9433L5.88379 18.082C4.38388 18.957 2.50016 17.875 2.5 16.1386V3.8613ZM5.12793 3.21384C4.62809 2.92236 4.00033 3.28277 4 3.8613V16.1386C4.00016 16.7174 4.628 17.0777 5.12793 16.7861L15.6514 10.6474C16.1468 10.3579 16.1468 9.64199 15.6514 9.35251L5.12793 3.21384Z" fill="#83388A"/></svg>
+              </div>
+              <div class="more-menu-label">
+                <span class="more-menu-primary">Activity</span>
+                <span class="more-menu-secondary">Create and find workflows and apps</span>
+              </div>
+            </div>
+            <div class="more-menu-divider"></div>
+            <div class="more-menu-item">
+              <div class="more-menu-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.514 1.28618C9.40787 0.928628 10.399 0.906065 11.305 1.21879L11.4857 1.28618L11.5667 1.32426C11.7505 1.42465 11.8855 1.59872 11.9359 1.80473L12.3079 3.32719C12.3094 3.33313 12.3105 3.33978 12.3118 3.34575C12.3864 3.68578 12.7775 3.84711 13.0706 3.65922L13.0863 3.64946L14.4261 2.83598C14.6331 2.71033 14.8881 2.6928 15.1107 2.78813C16.0547 3.19273 16.8076 3.94466 17.2122 4.88872C17.3076 5.11131 17.2891 5.36628 17.1634 5.57329L16.3499 6.91411C16.3468 6.91924 16.3434 6.92467 16.3402 6.92973C16.1642 7.20465 16.2956 7.56485 16.5931 7.66997L16.6546 7.68754L16.6722 7.69145L18.1956 8.0645L18.2816 8.09087C18.4771 8.16452 18.6345 8.31723 18.7132 8.51372C19.0947 9.46736 19.0947 10.5318 18.7132 11.4854C18.6233 11.7101 18.4307 11.878 18.1956 11.9356L16.6722 12.3077C16.6664 12.3091 16.6605 12.3103 16.6546 12.3116C16.3358 12.3813 16.1734 12.729 16.3089 13.0137L16.3402 13.0704L16.3499 13.086L17.1634 14.4258C17.289 14.6328 17.3075 14.8879 17.2122 15.1104C16.8076 16.0545 16.0547 16.8074 15.1107 17.212C14.8882 17.3071 14.633 17.2887 14.4261 17.1631L13.0863 16.3497C13.0811 16.3465 13.0757 16.3431 13.0706 16.3399C12.7775 16.152 12.3863 16.3142 12.3118 16.6543C12.3106 16.6602 12.3094 16.6661 12.3079 16.6719L11.9359 18.1954C11.8783 18.4304 11.7104 18.623 11.4857 18.7129C10.532 19.0944 9.46764 19.0944 8.514 18.7129C8.28948 18.623 8.12236 18.4303 8.06478 18.1954L7.69173 16.6719C7.69031 16.6661 7.68911 16.6602 7.68783 16.6543C7.61344 16.3143 7.22315 16.1523 6.93001 16.3399C6.92495 16.3431 6.91953 16.3465 6.91439 16.3497L5.57357 17.1631C5.36656 17.2888 5.11159 17.3073 4.889 17.212C3.94494 16.8074 3.19301 16.0545 2.78841 15.1104C2.69307 14.8878 2.7106 14.6328 2.83626 14.4258L3.64974 13.086L3.65951 13.0704C3.8474 12.7772 3.68607 12.3861 3.34603 12.3116C3.34006 12.3103 3.33341 12.3091 3.32748 12.3077L1.80501 11.9356C1.56979 11.8781 1.37643 11.7102 1.28646 11.4854C0.905002 10.5318 0.905002 9.46736 1.28646 8.51372C1.37647 8.28902 1.56987 8.12199 1.80501 8.0645L3.32748 7.69145C3.33341 7.69 3.34006 7.68885 3.34603 7.68754C3.68598 7.613 3.84722 7.22281 3.65951 6.92973C3.65623 6.92462 3.65289 6.9193 3.64974 6.91411L2.83626 5.57329C2.71066 5.36628 2.69303 5.11128 2.78841 4.88872C3.19299 3.94477 3.94507 3.19274 4.889 2.78813L4.97396 2.75688C5.17463 2.69819 5.39249 2.72612 5.57357 2.83598L6.91439 3.64946L6.93001 3.65922C7.22305 3.84687 7.61321 3.68559 7.68783 3.34575L7.69173 3.32719L8.06478 1.80473L8.09115 1.71782C8.16485 1.52234 8.31754 1.36488 8.514 1.28618ZM10.5785 2.57036C10.1974 2.47963 9.80125 2.47945 9.42025 2.57036L9.15267 3.66508C8.85629 5.01997 7.30702 5.66716 6.13607 4.93071V4.93169L5.15658 4.33696C4.82273 4.54224 4.54251 4.82244 4.33724 5.15629L4.9222 6.12016L4.98861 6.23051C5.63317 7.38867 4.98474 8.86496 3.66634 9.15337L3.66537 9.15239L2.57064 9.41997C2.47973 9.80097 2.47992 10.1971 2.57064 10.5782L3.68392 10.8506H3.68294C5.02635 11.1561 5.66425 12.6972 4.93099 13.8633L4.93197 13.8643L4.33724 14.8428C4.54241 15.1766 4.82291 15.4559 5.15658 15.6612L6.13607 15.0674C7.30686 14.3316 8.85713 14.9786 9.15365 16.3331H9.15267L9.42025 17.4278C9.80143 17.5188 10.1972 17.5186 10.5785 17.4278L10.8509 16.3155C11.1569 14.9731 12.6979 14.3349 13.8636 15.0674H13.8646L14.8431 15.6612C15.1766 15.4561 15.4573 15.1773 15.6624 14.8438L15.0677 13.8643V13.8633C14.3353 12.6977 14.9735 11.1567 16.3158 10.8506L17.4281 10.5782C17.5189 10.197 17.5191 9.80115 17.4281 9.41997L16.3333 9.15239C14.973 8.85444 14.3261 7.29267 15.0775 6.12016L15.6615 5.15532C15.4562 4.82195 15.1766 4.54198 14.8431 4.33696L13.8646 4.93169L13.8636 4.93071C12.6978 5.66379 11.1569 5.02639 10.8509 3.68364L10.5785 2.57036ZM10.0003 6.50004C11.9332 6.50024 13.5003 8.06717 13.5003 10C13.5003 11.9329 11.9332 13.4998 10.0003 13.5C8.06733 13.5 6.50033 11.933 6.50033 10C6.50033 8.06705 8.06733 6.50004 10.0003 6.50004ZM10.0003 8.00004C8.89576 8.00004 8.00033 8.89548 8.00033 10C8.00033 11.1046 8.89576 12 10.0003 12C11.1047 11.9998 12.0003 11.1045 12.0003 10C12.0003 8.8956 11.1047 8.00024 10.0003 8.00004Z" fill="#83388A"/></svg>
+              </div>
+              <div class="more-menu-label">
+                <span class="more-menu-primary">Admin</span>
+                <span class="more-menu-secondary">Manage your team's workspace</span>
+              </div>
+              <svg class="more-menu-caret" width="20" height="20" viewBox="0 0 20 20" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M7.71967 5.71967C8.01256 5.42678 8.48732 5.42678 8.78022 5.71967L12.5302 9.46967C12.6709 9.61031 12.7499 9.80105 12.7499 9.99994C12.7499 10.1988 12.6709 10.3896 12.5302 10.5302L8.78022 14.2802C8.48732 14.5731 8.01256 14.5731 7.71967 14.2802C7.42678 13.9873 7.42678 13.5126 7.71967 13.2197L10.9394 9.99994L7.71967 6.78022C7.42678 6.48732 7.42678 6.01256 7.71967 5.71967Z" fill="#1D1C1D"/></svg>
+            </div>
+          </div>
+          <div class="more-menu-footer">
+            <span class="more-menu-customize">Customize navigation bar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-bottom">
+      <button class="action-btn" aria-label="New">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5C10.4142 2.5 10.75 2.83579 10.75 3.25V9.25H16.75C17.1642 9.25 17.5 9.58579 17.5 10C17.5 10.4142 17.1642 10.75 16.75 10.75H10.75V16.75C10.75 17.1642 10.4142 17.5 10 17.5C9.58579 17.5 9.25 17.1642 9.25 16.75V10.75H3.25C2.83579 10.75 2.5 10.4142 2.5 10C2.5 9.58579 2.83579 9.25 3.25 9.25H9.25V3.25C9.25 2.83579 9.58579 2.5 10 2.5Z" fill="currentColor"/></svg>
+      </button>
+      <div class="profile-avatar">
+        <img src="../images/profile.png" alt="Profile">
+      </div>
+    </div>
+  </nav>
+
+  <script>
+    // Nav tab selection
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.setAttribute('tabindex', '0');
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav-tab-backing').forEach(b => b.classList.remove('active-backing'));
+        tab.classList.add('active');
+        tab.querySelector('.nav-tab-backing').classList.add('active-backing');
+      });
+      tab.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          tab.click();
+        }
+      });
+    });
+
+    // More menu: hover + click-to-pin with click-away dismiss
+    const moreTab = document.querySelector('.nav-tab[data-tab="more"]');
+    const moreMenu = document.querySelector('.more-menu');
+    let moreMenuPinned = false;
+    let hideTimeout = null;
+
+    function positionMoreMenu() {
+      if (!moreTab || !moreMenu) return;
+      const rect = moreTab.getBoundingClientRect();
+      moreMenu.style.left = (rect.right + 8) + 'px';
+      moreMenu.style.top = (rect.top - 8) + 'px';
+    }
+
+    function notifyParent(msg) {
+      if (window.parent !== window) {
+        window.parent.postMessage(msg, '*');
+      }
+    }
+
+    function showMenu() {
+      // Close tools menu if open
+      if (toolsMenu && toolsMenu.classList.contains('visible')) { toolsMenuPinned = false; toolsMenu.classList.remove('visible'); }
+      notifyParent('more-menu-open');
+      // Double rAF to let parent expand iframe before positioning
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          positionMoreMenu();
+          moreMenu.classList.add('visible');
+        });
+      });
+    }
+
+    function hideMenu() {
+      moreMenu.classList.remove('visible');
+      notifyParent('more-menu-close');
+    }
+
+    if (moreTab && moreMenu) {
+      function scheduleHide() {
+        hideTimeout = setTimeout(() => {
+          hideMenu();
+        }, 150);
+      }
+
+      function cancelHide() {
+        if (hideTimeout) {
+          clearTimeout(hideTimeout);
+          hideTimeout = null;
+        }
+      }
+
+      moreTab.addEventListener('mouseenter', () => {
+        if (!moreMenuPinned) {
+          cancelHide();
+          showMenu();
+        }
+      });
+      moreTab.addEventListener('mouseleave', () => {
+        if (!moreMenuPinned) {
+          scheduleHide();
+        }
+      });
+      moreMenu.addEventListener('mouseenter', () => {
+        if (!moreMenuPinned) {
+          cancelHide();
+        }
+      });
+      moreMenu.addEventListener('mouseleave', () => {
+        if (!moreMenuPinned) {
+          scheduleHide();
+        }
+      });
+
+      moreTab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (moreMenuPinned) {
+          moreMenuPinned = false;
+          hideMenu();
+        } else {
+          moreMenuPinned = true;
+          showMenu();
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (moreMenuPinned && !moreMenu.contains(e.target) && !moreTab.contains(e.target)) {
+          moreMenuPinned = false;
+          hideMenu();
+        }
+      });
+    }
+
+    // Listen for parent frame click-away dismiss
+    window.addEventListener('message', (e) => {
+      if (e.data === 'dismiss-more-menu') {
+        moreMenuPinned = false;
+        hideMenu();
+        toolsMenuPinned = false;
+        hideToolsMenu();
+      }
+    });
+
+    // Tools menu: hover + click-to-pin (same pattern as More)
+    const toolsTab = document.querySelector('.nav-tab[data-tab="tools"]');
+    const toolsMenu = document.querySelector('.tools-menu');
+    let toolsMenuPinned = false;
+    let toolsHideTimeout = null;
+
+    function positionToolsMenu() {
+      if (!toolsTab || !toolsMenu) return;
+      const rect = toolsTab.getBoundingClientRect();
+      toolsMenu.style.left = (rect.right + 8) + 'px';
+      toolsMenu.style.top = (rect.top - 8) + 'px';
+    }
+
+    function showToolsMenu() {
+      // Close more menu if open
+      if (moreMenu && moreMenu.classList.contains('visible')) { moreMenuPinned = false; moreMenu.classList.remove('visible'); }
+      notifyParent('more-menu-open');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          positionToolsMenu();
+          toolsMenu.classList.add('visible');
+        });
+      });
+    }
+
+    function hideToolsMenu() {
+      toolsMenu.classList.remove('visible');
+      notifyParent('more-menu-close');
+    }
+
+    function scheduleToolsHide() {
+      toolsHideTimeout = setTimeout(() => { hideToolsMenu(); }, 150);
+    }
+
+    function cancelToolsHide() {
+      if (toolsHideTimeout) { clearTimeout(toolsHideTimeout); toolsHideTimeout = null; }
+    }
+
+    if (toolsTab && toolsMenu) {
+      toolsTab.addEventListener('mouseenter', () => {
+        if (!toolsMenuPinned) { cancelToolsHide(); showToolsMenu(); }
+      });
+      toolsTab.addEventListener('mouseleave', () => {
+        if (!toolsMenuPinned) { scheduleToolsHide(); }
+      });
+      toolsMenu.addEventListener('mouseenter', () => {
+        if (!toolsMenuPinned) { cancelToolsHide(); }
+      });
+      toolsMenu.addEventListener('mouseleave', () => {
+        if (!toolsMenuPinned) { scheduleToolsHide(); }
+      });
+      toolsTab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (toolsMenuPinned) { toolsMenuPinned = false; hideToolsMenu(); }
+        else { toolsMenuPinned = true; showToolsMenu(); }
+      });
+      document.addEventListener('click', (e) => {
+        if (toolsMenuPinned && !toolsMenu.contains(e.target) && !toolsTab.contains(e.target)) {
+          toolsMenuPinned = false; hideToolsMenu();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

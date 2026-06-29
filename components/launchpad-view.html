@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Launchpad Home View</title>
+  <link rel="stylesheet" href="../fonts.css">
+  <style>
+    :root {
+      --sk-primary-text: #1D1C1D;
+      --sk-secondary-text: #616061;
+      --sk-muted-text: #717182;
+      --sk-white: #FFFFFF;
+      --sk-border-subtle: rgba(0, 0, 0, 0.08);
+      --sk-border: #E8E8E8;
+      --sk-success: #007A5A;
+      --sk-aubergine: #611f69;
+      --sk-link: #1264A3;
+      --sk-font: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+      --sk-radius-md: 6px;
+      --sk-radius-lg: 8px;
+      --sk-radius-xl: 12px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: var(--sk-font);
+      background: transparent;
+      -webkit-font-smoothing: antialiased;
+      color: var(--sk-primary-text);
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    /* Body content with soft top gradient behind the welcome.
+       Vertically centers the content when the viewport has room,
+       and falls back to top-aligned + scrollable when it doesn't
+       (safe center prevents the top from being clipped). */
+    .lp-body {
+      position: relative;
+      /* Own stacking context so the z-index:-1 glow stays contained
+         (above the white bg, behind content) instead of escaping. */
+      isolation: isolate;
+      height: 100%;
+      overflow-y: auto;
+      background: var(--sk-white);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* Guarantee at least 32px of margin around the content on all sides */
+      padding: 32px;
+    }
+
+    /* Anchor the content toward the top: distribute the free space so the
+       gap above is 1/3 of the gap below (top:bottom = 1:3).
+       The spacers collapse to 0 when content overflows, so it falls back
+       to top-aligned + scrollable. */
+    .lp-body::before { content: ''; flex: 1 0 0; }
+    .lp-body::after  { content: ''; flex: 3 0 0; }
+
+    .lp-glow {
+      /* Subtle gray diagonal wash from the design: light gray at the
+         top-left fading to white (linear-gradient 140deg, #f7f7f7 -> #fff). */
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(140deg, #f7f7f7 1%, #ffffff 57%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .lp-inner {
+      position: relative;
+      /* No z-index here: keeping it in the same stacking context as .lp-glow
+         lets the mark's mix-blend-mode blend against the background below. */
+      width: 600px;
+      max-width: 100%;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Welcome */
+    .lp-mark {
+      width: 64px;
+      height: auto;
+      object-fit: contain;
+      /* Drop the asset's white background against the light gradient */
+      mix-blend-mode: multiply;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .lp-mark.visible { opacity: 1; transform: none; }
+
+    .lp-welcome {
+      text-align: center;
+      margin-top: 8px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s;
+    }
+    .lp-welcome.visible { opacity: 1; transform: none; }
+
+    .lp-title {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--sk-primary-text);
+      line-height: 30px;
+      letter-spacing: 0;
+    }
+
+    .lp-subtitle {
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--sk-secondary-text);
+      line-height: 22px;
+      margin-top: 4px;
+    }
+
+    /* Intent cards row */
+    .lp-intents {
+      display: flex;
+      gap: 16px;
+      width: 100%;
+      margin-top: 48px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .lp-intents.visible { opacity: 1; transform: none; }
+
+    .intent-card {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 20px 16px 20px 24px;
+      background: var(--sk-white);
+      border: 0.5px solid rgba(94, 93, 96, 0.13);
+      border-radius: var(--sk-radius-xl);
+      box-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      transition: box-shadow 0.18s ease, transform 0.18s ease;
+    }
+    .intent-card:hover {
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .intent-icon {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #f8f8f8;
+      box-shadow: 0 3.5px 5.3px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .intent-icon.green {
+      background: #007a5a;
+      box-shadow: none;
+    }
+
+    .intent-text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow: hidden;
+    }
+    .intent-primary {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--sk-primary-text);
+      line-height: 22px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .intent-secondary {
+      font-size: 13px;
+      font-weight: 400;
+      color: #5e5d60;
+      opacity: 0.8;
+      line-height: 18px;
+    }
+
+    /* Checklist */
+    .lp-checklist {
+      width: 100%;
+      margin-top: 76px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .lp-checklist.visible { opacity: 1; transform: none; }
+
+    /* Section header — "Recommended Setup" + dotted line */
+    .check-header {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 0 24px;
+      margin-top: 24px;
+      margin-bottom: 16px;
+    }
+    .check-header-label {
+      flex-shrink: 0;
+      font-size: 15px;
+      font-weight: 400;
+      color: #5e5d60;
+      line-height: 22px;
+    }
+    .check-header-line {
+      flex: 1;
+      min-width: 0;
+      height: 0;
+      border-top: 1px dotted rgba(94, 93, 96, 0.4);
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 20px;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(94, 93, 96, 0.13);
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .check-row:hover { background: #fafafa; }
+
+    /* Number badge (left) */
+    .check-num {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #f8f8f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: #5e5d60;
+      line-height: 22px;
+    }
+
+    .check-label {
+      flex: 1;
+      min-width: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--sk-primary-text);
+      line-height: 27px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .check-label .check-link { color: #83388a; }
+
+    .check-row.done .check-label {
+      color: var(--sk-secondary-text);
+      text-decoration: line-through;
+      text-decoration-color: rgba(0,0,0,0.25);
+    }
+    .check-row.done .check-label .check-link { color: inherit; }
+
+    /* Outline circle (right) — toggles to filled green when done */
+    .check-circle {
+      width: 23px;
+      height: 23px;
+      flex-shrink: 0;
+      margin-left: -4px;
+      border-radius: 50%;
+      border: 1.5px solid #5F7BE1;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      position: relative;
+    }
+    .check-row.done .check-circle {
+      background: var(--sk-success);
+      border-color: var(--sk-success);
+    }
+    .check-row.done .check-circle::after {
+      content: '';
+      position: absolute;
+      top: 5px; left: 8px;
+      width: 5px; height: 9px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    /* Context bar — Need help -> Ask Slackbot */
+    .lp-context-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: var(--sk-white);
+      border: 1px solid var(--sk-border-subtle);
+      border-radius: 999px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+      cursor: pointer;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 0.5s ease, transform 0.2s ease;
+    }
+    .lp-context-bar.visible { opacity: 1; }
+    .lp-context-bar:hover { transform: translateX(-50%) translateY(-1px); }
+
+    .lp-context-icon {
+      width: 22px; height: auto;
+      object-fit: contain;
+    }
+    .lp-context-text {
+      font-size: 13px;
+      color: var(--sk-secondary-text);
+      line-height: 18px;
+    }
+    .lp-context-text strong {
+      font-weight: 900;
+      color: var(--sk-primary-text);
+    }
+
+    .lp-body::-webkit-scrollbar { width: 8px; }
+    .lp-body::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.15);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="lp-body">
+    <div class="lp-glow"></div>
+    <div class="lp-inner">
+      <!-- Welcome -->
+      <img src="../images/slackbot-welcome.png" alt="Slackbot" class="lp-mark" id="lpMark">
+      <div class="lp-welcome" id="lpWelcome">
+        <h1 class="lp-title" id="lpTitle">Welcome, Arcadio!</h1>
+        <p class="lp-subtitle">Here are some ways to get started in your new workspace.</p>
+      </div>
+
+      <!-- Intent cards -->
+      <div class="lp-intents" id="lpIntents">
+        <div class="intent-card">
+          <span class="intent-icon">
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M7 8.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0-1.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm-5.25 7.25c0-2.4 2.35-3.75 5.25-3.75.66 0 1.3.07 1.9.21a.75.75 0 1 1-.34 1.46A7.4 7.4 0 0 0 7 11.75c-2.5 0-3.75 1.1-3.75 2.25 0 .14.11.25.25.25h4a.75.75 0 0 1 0 1.5h-4A1.75 1.75 0 0 1 1.75 14ZM14 10a.75.75 0 0 1 .75.75V12h1.25a.75.75 0 0 1 0 1.5h-1.25v1.25a.75.75 0 0 1-1.5 0V13.5H12a.75.75 0 0 1 0-1.5h1.25v-1.25A.75.75 0 0 1 14 10Z" fill="#611f69"/></svg>
+          </span>
+          <div class="intent-text">
+            <span class="intent-primary">Invite people</span>
+            <span class="intent-secondary">Add people to the workspace</span>
+          </div>
+        </div>
+        <div class="intent-card">
+          <span class="intent-icon green">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5v11M1.5 7h11" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          <div class="intent-text">
+            <span class="intent-primary">Start a #channel</span>
+            <span class="intent-secondary">A space to chat and collaborate</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Setup checklist -->
+      <div class="lp-checklist" id="lpChecklist">
+        <div class="check-header">
+          <span class="check-header-label">Recommended Setup</span>
+        </div>
+        <div class="check-row">
+          <span class="check-num">1</span>
+          <span class="check-label">Add a workspace logo</span>
+          <span class="check-circle"></span>
+        </div>
+        <div class="check-row" data-task="connect-apps">
+          <span class="check-num">2</span>
+          <span class="check-label">Connect your work apps and tools</span>
+          <span class="check-circle"></span>
+        </div>
+        <div class="check-row">
+          <span class="check-num">3</span>
+          <span class="check-label">Create <span class="check-link">#channels</span> for your team to start talking</span>
+          <span class="check-circle"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Need help context bar -->
+    <div class="lp-context-bar" id="lpContextBar">
+      <img src="../images/slackbot-welcome.png" alt="Slackbot" class="lp-context-icon">
+      <span class="lp-context-text"><strong>Need help?</strong> Ask Slackbot anything…</span>
+    </div>
+  </div>
+
+  <script>
+    const mark = document.getElementById('lpMark');
+    const welcome = document.getElementById('lpWelcome');
+    const intents = document.getElementById('lpIntents');
+    const checklist = document.getElementById('lpChecklist');
+    const contextBar = document.getElementById('lpContextBar');
+    const titleEl = document.getElementById('lpTitle');
+
+    let introPlayed = false;
+
+    function playIntro(data) {
+      if (introPlayed) return;
+      introPlayed = true;
+
+      // Personalize the greeting if a name was passed through onboarding
+      if (data && data.userName) {
+        titleEl.textContent = `Welcome, ${data.userName}!`;
+      }
+
+      requestAnimationFrame(() => {
+        setTimeout(() => mark.classList.add('visible'), 100);
+        setTimeout(() => welcome.classList.add('visible'), 220);
+      });
+    }
+
+    // Reveal cards + checklist once the sidebar has finished expanding
+    let contentRevealed = false;
+    function revealContent() {
+      if (contentRevealed) return;
+      contentRevealed = true;
+      requestAnimationFrame(() => {
+        intents.classList.add('visible');
+        setTimeout(() => checklist.classList.add('visible'), 180);
+        setTimeout(() => contextBar.classList.add('visible'), 360);
+      });
+    }
+
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'onboarding-complete') {
+        playIntro(e.data);
+      }
+      if (e.data === 'sidebar-content-ready') {
+        playIntro();      // safety: ensure intro runs even if onboarding msg was missed
+        revealContent();
+      }
+      if (e.data && e.data.type === 'nav-full-reset') {
+        // Reset to initial state then replay
+        introPlayed = false;
+        contentRevealed = false;
+        mark.classList.remove('visible');
+        welcome.classList.remove('visible');
+        intents.classList.remove('visible');
+        checklist.classList.remove('visible');
+        contextBar.classList.remove('visible');
+        playIntro();
+        revealContent();
+      }
+    });
+
+    // Checklist toggle
+    document.querySelectorAll('.check-row').forEach(row => {
+      row.addEventListener('click', () => row.classList.toggle('done'));
+    });
+
+    // "Connect your work apps and tools" task hover -> show the shared
+    // Connect Apps menu that lives in the parent (same one the sidebar uses).
+    const connectRow = document.querySelector('.check-row[data-task="connect-apps"]');
+    if (connectRow) {
+      connectRow.addEventListener('mouseenter', () => {
+        const r = connectRow.getBoundingClientRect();
+        // Anchor the menu just inside the row's right edge, near the top.
+        window.parent.postMessage({
+          type: 'connect-apps-anchor',
+          // coordinates relative to this iframe's own viewport
+          right: r.right,
+          left: r.left,
+          top: r.top
+        }, '*');
+      });
+      connectRow.addEventListener('mouseleave', () => {
+        window.parent.postMessage({ type: 'connect-apps-hide' }, '*');
+      });
+    }
+
+    // Intent cards (no-op navigation in prototype, give press feedback)
+    document.querySelectorAll('.intent-card').forEach(card => {
+      card.addEventListener('click', () => {
+        card.animate(
+          [{ transform: 'scale(0.99)' }, { transform: 'scale(1)' }],
+          { duration: 160, easing: 'ease-out' }
+        );
+      });
+    });
+
+    // Signal readiness to parent (handshake parity with base prototype:
+    // app.js listens for 'slackbot-dm-view-ready' to relay pending personalization)
+    function announceReady() {
+      window.parent.postMessage('slackbot-dm-view-ready', '*');
+    }
+    announceReady();
+    setTimeout(announceReady, 500);
+  </script>
+</body>
+</html>
