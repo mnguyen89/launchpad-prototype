@@ -289,11 +289,28 @@
       border: 1.5px solid #5F7BE1;
       transition: background 0.15s ease, border-color 0.15s ease;
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+    .check-circle .check-arrow-icon {
+      width: 13px;
+      height: 13px;
+      display: none;
+    }
+    /* Hover: fill the circle + show a right arrow (signals an action) */
+    .check-row:hover .check-circle {
+      background: #5F7BE1;
+      border-color: #5F7BE1;
+    }
+    .check-row:hover .check-circle .check-arrow-icon { display: block; }
     .check-row.done .check-circle {
       background: var(--sk-success);
       border-color: var(--sk-success);
     }
+    /* Done shows a checkmark; hide the hover arrow when done */
+    .check-row.done:hover .check-circle { background: var(--sk-success); border-color: var(--sk-success); }
+    .check-row.done .check-circle .check-arrow-icon { display: none !important; }
     .check-row.done .check-circle::after {
       content: '';
       position: absolute;
@@ -388,17 +405,17 @@
         <div class="check-row">
           <span class="check-num">1</span>
           <span class="check-label">Add a workspace logo</span>
-          <span class="check-circle"></span>
+          <span class="check-circle"><svg class="check-arrow-icon" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M5 3l4 4-4 4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         </div>
         <div class="check-row" data-task="connect-apps">
           <span class="check-num">2</span>
           <span class="check-label">Connect your work apps and tools</span>
-          <span class="check-circle"></span>
+          <span class="check-circle"><svg class="check-arrow-icon" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M5 3l4 4-4 4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         </div>
         <div class="check-row">
           <span class="check-num">3</span>
           <span class="check-label">Create <span class="check-link">#channels</span> for your team to start talking</span>
-          <span class="check-circle"></span>
+          <span class="check-circle"><svg class="check-arrow-icon" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M5 3l4 4-4 4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         </div>
       </div>
     </div>
@@ -469,9 +486,12 @@
       }
     });
 
-    // Checklist toggle
+    // Clicking a task opens the placeholder modal (does not check it off).
     document.querySelectorAll('.check-row').forEach(row => {
-      row.addEventListener('click', () => row.classList.toggle('done'));
+      row.addEventListener('click', () => {
+        const label = row.querySelector('.check-label');
+        window.top.postMessage({ type: 'open-placeholder', title: label ? label.textContent.trim() : '' }, '*');
+      });
     });
 
     // "Connect your work apps and tools" task hover -> show the shared

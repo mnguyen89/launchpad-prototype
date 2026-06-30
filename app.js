@@ -53,10 +53,10 @@ if (window !== window.parent) {
         };
         setTimeout(playCardIntro, 200);
         if (channelIframe) channelIframe.addEventListener('load', playCardIntro);
-        // Auto-open the setup peek (pinned) 1s after the app lands.
+        // Auto-open the setup peek (pinned) 2s after the app lands.
         setTimeout(() => {
           if (typeof showPocketGuide === 'function') showPocketGuide(true);
-        }, 1000);
+        }, 2000);
       } else {
         // ===== Design A: land on Launchpad (sidebar reveals after a beat) =====
         if (sidebar) {
@@ -311,9 +311,13 @@ let pocketPinned = false; // pinned = stays open until X dismiss (click/auto-ope
 function positionPocketGuide() {
   if (!setupRow || !pocketGuide) return;
   const r = setupRow.getBoundingClientRect();
-  // Flush to the right of the sidebar row, tail aligned near the row top.
+  const top = r.top - 8;
+  // Flush to the right of the sidebar row.
   pocketGuide.style.left = (r.right + 10) + 'px';
-  pocketGuide.style.top = (r.top - 8) + 'px';
+  pocketGuide.style.top = top + 'px';
+  // Center the tail on the row's vertical midpoint (tail is 12px tall).
+  const tail = pocketGuide.querySelector('.pocket-guide__tail');
+  if (tail) tail.style.top = (r.top + r.height / 2 - top - 6) + 'px';
 }
 function showPocketGuide(pin) {
   if (!setupRow || !pocketGuide || !window.__designB) return;
@@ -368,9 +372,12 @@ if (setupRow && pocketGuide) {
       hidePocketGuide();
     });
   }
-  // Toggle tasks done on click (matches the template behavior).
+  // Clicking a task opens the placeholder modal (does not check it off).
   pocketGuide.querySelectorAll('.pocket-guide__task').forEach(task => {
-    task.addEventListener('click', () => task.classList.toggle('pocket-guide__task--done'));
+    task.addEventListener('click', () => {
+      const title = task.querySelector('.pocket-guide__task-title');
+      window.top.postMessage({ type: 'open-placeholder', title: title ? title.textContent.trim() : '' }, '*');
+    });
   });
 }
 

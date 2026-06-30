@@ -1311,8 +1311,8 @@ body.embedded .top-bar-right {
 
 /* Setup row ("Set up your Slack") */
 .page-row .page-row-leadicon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1320,10 +1320,25 @@ body.embedded .top-bar-right {
   color: var(--sk-sidebar-text);
 }
 
-.page-row.setup-row { margin-bottom: 2px; }
+/* Setup row — "Set up your Slack" with a circular progress ring.
+   Label is Lato Regular at 80% opacity (default/hover), dark when selected. */
+.page-row.setup-row { margin-bottom: 2px; gap: 10px; }
+.page-row.setup-row .page-label {
+  font-weight: 400;
+  opacity: 0.8;
+}
+.page-row.setup-row:hover { background: rgba(249, 237, 255, 0.08); }
 
-/* Active setup row: white selected pill with dark icon (matches Figma) */
-.page-row.setup-row.active-page .page-row-leadicon { color: var(--sk-primary-text); }
+/* Selected: aubergine pill, dark text, ring track flips to a tinted fill */
+.page-row.setup-row.active-page { background: var(--sk-sidebar-active-bg); }
+.page-row.setup-row.active-page .page-label {
+  color: #39063a;
+  opacity: 1;
+}
+/* Selected: ring track tints to dark (the arc keeps its green stroke). */
+.page-row.setup-row.active-page .setup-progress circle:first-child {
+  stroke: rgba(57, 6, 58, 0.15);
+}
 
 /* ============================================================
    Sidebar Peek — Pocket Guide (Design B)
@@ -1426,8 +1441,8 @@ body.embedded .top-bar-right {
   justify-content: center;
 }
 .pocket-guide__check svg { width: 14px; height: 14px; color: #fff; display: none; }
-.pocket-guide__task--done .pocket-guide__check { background: #7d95eb; }
-.pocket-guide__task--done .pocket-guide__check svg { display: block; }
+.pocket-guide__task--done .pocket-guide__check { background: #7d95eb; border-color: #7d95eb; }
+.pocket-guide__task--done .pocket-guide__check .pg-check { display: block; }
 .pocket-guide__content { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
 .pocket-guide__task-title {
   font-weight: 900;

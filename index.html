@@ -243,6 +243,17 @@
         <svg class="secret-check" width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3.2 3L13 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
+
+    <!-- Placeholder modal — opened when a setup task is clicked -->
+    <div class="placeholder-modal" id="placeholderModal" aria-hidden="true">
+      <div class="placeholder-modal__card" role="dialog" aria-modal="true">
+        <button class="placeholder-modal__close" id="placeholderModalClose" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+        <h2 class="placeholder-modal__title" id="placeholderModalTitle">Placeholder</h2>
+        <p class="placeholder-modal__body">This is a placeholder for the task flow.</p>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -271,6 +282,32 @@
         appIframe.contentWindow.postMessage('dismiss-peek', '*');
       }
     }
+
+    // ===== Placeholder modal (opened by setup task clicks) =====
+    (function () {
+      const modal = document.getElementById('placeholderModal');
+      const closeBtn = document.getElementById('placeholderModalClose');
+      const titleEl = document.getElementById('placeholderModalTitle');
+      if (!modal) return;
+
+      function openModal(title) {
+        if (title) titleEl.textContent = title;
+        modal.classList.add('visible');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+      function closeModal() {
+        modal.classList.remove('visible');
+        modal.setAttribute('aria-hidden', 'true');
+      }
+      closeBtn && closeBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+      // Setup tasks (in the app iframe and its sub-views) request the modal.
+      window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'open-placeholder') openModal(e.data.title);
+      });
+    })();
   </script>
 
   <script>
