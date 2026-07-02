@@ -329,12 +329,16 @@ function showPocketGuide(pin) {
   }
   pocketGuide.classList.add('visible');
   pocketGuide.setAttribute('aria-hidden', 'false');
+  // Keep the sidebar row highlighted (Hover state) while the peek is open.
+  setupRow.classList.add('peek-open');
 }
 function hidePocketGuide() {
   if (!pocketGuide) return;
   pocketPinned = false;
-  pocketGuide.classList.remove('visible', 'pinned');
+  // Restore the first-item preview for the next time the peek opens.
+  pocketGuide.classList.remove('visible', 'pinned', 'interacted');
   pocketGuide.setAttribute('aria-hidden', 'true');
+  if (setupRow) setupRow.classList.remove('peek-open');
 }
 function schedulePocketHide() {
   if (pocketPinned) return; // pinned peeks ignore hover-out
@@ -357,13 +361,17 @@ document.querySelectorAll('.page-row').forEach(row => {
 });
 
 if (setupRow && pocketGuide) {
+  // The first task previews its expanded state until the user interacts with
+  // the peek; then normal hover behavior takes over.
+  function markInteracted() { pocketGuide.classList.add('interacted'); }
+
   setupRow.addEventListener('mouseenter', () => {
     if (!window.__designB) return;
     cancelPocketHide();
     showPocketGuide(false);
   });
   setupRow.addEventListener('mouseleave', schedulePocketHide);
-  pocketGuide.addEventListener('mouseenter', cancelPocketHide);
+  pocketGuide.addEventListener('mouseenter', () => { cancelPocketHide(); markInteracted(); });
   pocketGuide.addEventListener('mouseleave', schedulePocketHide);
   // X dismiss button.
   if (pocketGuideClose) {

@@ -1327,7 +1327,9 @@ body.embedded .top-bar-right {
   font-weight: 400;
   opacity: 0.8;
 }
-.page-row.setup-row:hover { background: rgba(249, 237, 255, 0.08); }
+/* Hover + while the peek is open: subtle highlight (Figma "Hover" state) */
+.page-row.setup-row:hover,
+.page-row.setup-row.peek-open { background: rgba(249, 237, 255, 0.08); }
 
 /* Selected: aubergine pill, dark text, ring track flips to a tinted fill */
 .page-row.setup-row.active-page { background: var(--sk-sidebar-active-bg); }
@@ -1347,7 +1349,7 @@ body.embedded .top-bar-right {
    ============================================================ */
 .pocket-guide {
   position: fixed;
-  width: 332px;
+  width: 360px;
   background: #ffffff;
   border: 1px solid rgba(94, 93, 96, 0.13);
   border-radius: 12px;
@@ -1402,22 +1404,21 @@ body.embedded .top-bar-right {
 .pocket-guide__header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 12px 16px;
+  gap: 23px;
+  /* left pad 28px aligns the seedling with the row circles (list 12 + row 16) */
+  padding: 12px 20px 12px 28px;
   border-bottom: 1px solid rgba(94, 93, 96, 0.13);
 }
-/* 48px rounded badge holding the seedling icon */
+/* Seedling icon, matched to the 28px circle column (no background) */
 .pocket-guide__badge {
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: #f8f8f8;
+  width: 25px;
+  height: 40px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 }
-.pocket-guide__badge img { width: 30px; height: 30px; display: block; }
+.pocket-guide__badge img { width: 25px; height: 25px; display: block; }
 .pocket-guide__title {
   margin: 0;
   font-weight: 900;
@@ -1425,22 +1426,48 @@ body.embedded .top-bar-right {
   line-height: 27px;
   color: #1d1c1d;
 }
-.pocket-guide__list { display: flex; flex-direction: column; padding: 16px 12px 24px; }
+/* Lock the list height to the steady state (one row expanded) so the peek
+   never resizes while rows crossfade — kills the height stutter when moving
+   between rows. 2 collapsed rows (46px) + 1 expanded (68px) + padding (40px). */
+.pocket-guide__list {
+  display: flex; flex-direction: column; justify-content: flex-start; gap: 6px;
+  padding: 12px;
+  /* Fixed height = one-row-expanded steady state, so the peek NEVER resizes
+     regardless of which row (or no row) is expanded — no height stutter.
+     Centering keeps top/bottom spacing equal whichever row expands. */
+  height: 196px;
+}
 .pocket-guide__task {
+  position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 20px;
   width: 100%;
-  padding: 8px 4px 8px 20px;
+  padding: 10px 4px 10px 16px;
   border: none;
   background: transparent;
   border-radius: 8px;
   cursor: pointer;
   text-align: left;
   font-family: inherit;
-  transition: background 0.15s;
 }
-.pocket-guide__task:hover { background: #f8f8f8; }
+/* Keep the circle aligned to the first (title) line even when the row
+   expands to two lines. */
+.pocket-guide__check { margin-top: -1px; }
+/* Hover fill lives on a pseudo that extends beyond the row box, so the grey
+   gets extra breathing room without shifting content or the other rows. */
+.pocket-guide__task::before {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+  background: #f8f8f8;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.31s cubic-bezier(0.25, 0.1, 0.25, 1);
+  z-index: 0;
+}
+.pocket-guide__task:hover::before { opacity: 1; }
+.pocket-guide__task > * { position: relative; z-index: 1; }
 .pocket-guide__check {
   flex-shrink: 0;
   width: 28px;
@@ -1455,26 +1482,44 @@ body.embedded .top-bar-right {
 .pocket-guide__check svg { width: 14px; height: 14px; color: #fff; display: none; }
 .pocket-guide__task--done .pocket-guide__check { background: #7d95eb; border-color: #7d95eb; }
 .pocket-guide__task--done .pocket-guide__check .pg-check { display: block; }
-/* Reserve two lines of height always, so revealing the subtitle on hover
-   doesn't change the row/peek size. Content is centered as a block. */
+/* Single-line by default; the active (hover/preview) row expands to show the
+   subtitle. Only one row is expanded at a time, so the check/caret stay
+   centered on the row's content. */
 .pocket-guide__content {
   flex: 1 1 0; min-width: 0;
-  display: flex; flex-direction: column; justify-content: center;
-  min-height: 42px; /* 22px title + 2px gap + 18px subtitle */
+  display: flex; flex-direction: column; justify-content: flex-start;
 }
 .pocket-guide__task-title {
-  font-weight: 400;
+  font-weight: 700;
   font-size: 15px;
   line-height: 22px;
-  color: #454447;
+  color: #5e5d60;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: font-weight 0.15s ease, color 0.15s ease;
+  transition: color 0.31s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 /* Hovered task: title goes bold (Lato Black), primary color, subtitle reveals */
 .pocket-guide__task:hover .pocket-guide__task-title { font-weight: 900; color: #1d1c1d; }
+/* Preview: before the user interacts, the first task looks/acts hovered.
+   Cleared (via .interacted on the peek) on first hover/click. */
+.pocket-guide:not(.interacted) .pocket-guide__task--preview .pocket-guide__task-title { font-weight: 900; color: #1d1c1d; }
+/* Subtitle reveal uses the grid-rows 0fr->1fr technique: it animates the row
+   height smoothly (no sub-pixel px-height stutter) and stays layout-clean. */
+.pocket-guide__sub-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.44s cubic-bezier(0.22, 0.61, 0.36, 1),
+              margin-top 0.44s cubic-bezier(0.22, 0.61, 0.36, 1);
+  margin-top: 0;
+}
+.pocket-guide__task:hover .pocket-guide__sub-wrap,
+.pocket-guide:not(.interacted) .pocket-guide__task--preview .pocket-guide__sub-wrap {
+  grid-template-rows: 1fr;
+  margin-top: 2px;
+}
 .pocket-guide__task-sub {
+  min-height: 0;
   font-weight: 400;
   font-size: 13px;
   line-height: 18px;
@@ -1482,26 +1527,16 @@ body.embedded .top-bar-right {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  /* Space is always reserved (row min-height); reveal collapses the height
-     and fades the text so the peek size never changes. */
-  height: 0;
-  margin-top: 0;
+  /* Soft, calm entry: fade + gentle rise, slightly delayed so the text
+     appears just after the row has opened. */
   opacity: 0;
-  transition: height 0.2s ease, opacity 0.2s ease, margin-top 0.2s ease;
+  transform: translateY(3px);
+  transition: opacity 0.385s ease, transform 0.385s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-.pocket-guide__task:hover .pocket-guide__task-sub {
-  height: 18px;
-  margin-top: 2px;
+.pocket-guide__task:hover .pocket-guide__task-sub,
+.pocket-guide:not(.interacted) .pocket-guide__task--preview .pocket-guide__task-sub {
   opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.11s;
 }
 .pocket-guide__task--done .pocket-guide__task-title { text-decoration: line-through; color: #5e5d60; }
-.pocket-guide__caret {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #5e5d60;
-}
-.pocket-guide__caret svg { width: 14.5px; height: 14.5px; display: block; }
